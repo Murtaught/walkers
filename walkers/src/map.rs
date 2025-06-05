@@ -1,4 +1,4 @@
-use egui::{PointerButton, Rect, Response, Sense, Ui, UiBuilder, Vec2, Widget};
+use egui::{PointerButton, Rect, Response, Sense, Ui, UiBuilder, Vec2, Widget, Color32};
 
 use crate::{
     center::Center,
@@ -27,6 +27,7 @@ pub trait Plugin {
 struct Layer<'a> {
     tiles: &'a mut dyn Tiles,
     transparency: f32,
+    tint: Color32,
 }
 
 /// The actual map widget. Instances are to be created on each frame, as all necessary state is
@@ -52,6 +53,7 @@ pub struct Map<'a, 'b, 'c> {
     my_position: Position,
     plugins: Vec<Box<dyn Plugin + 'c>>,
 
+    tint_color: Color32,
     zoom_gesture_enabled: bool,
     drag_gesture_enabled: bool,
     zoom_speed: f64,
@@ -73,6 +75,7 @@ impl<'a, 'b, 'c> Map<'a, 'b, 'c> {
             memory,
             my_position,
             plugins: Vec::default(),
+            tint_color: Color32::WHITE,
             zoom_gesture_enabled: true,
             drag_gesture_enabled: true,
             zoom_speed: 2.0,
@@ -90,11 +93,17 @@ impl<'a, 'b, 'c> Map<'a, 'b, 'c> {
     }
 
     /// Add a tile layer. All layers are drawn on top of each other with given transparency.
-    pub fn with_layer(mut self, tiles: &'b mut dyn Tiles, transparency: f32) -> Self {
+    pub fn with_layer(mut self, tiles: &'b mut dyn Tiles, transparency: f32, tint: Color32) -> Self {
         self.layers.push(Layer {
             tiles,
             transparency,
+            tint,
         });
+        self
+    }
+
+    pub fn tint_color(mut self, color: Color32) -> Self {
+        self.tint_color = color;
         self
     }
 
@@ -335,11 +344,11 @@ impl Widget for Map<'_, '_, '_> {
         let painter = ui.painter().with_clip_rect(rect);
 
         if let Some(tiles) = self.tiles {
-            draw_tiles(&painter, map_center, zoom, tiles, 1.0);
+            draw_tiles(&painter, map_center, zoom, tiles, 1.0, self.tint_color);
         }
 
         for layer in self.layers {
-            draw_tiles(&painter, map_center, zoom, layer.tiles, layer.transparency);
+            draw_tiles(&painter, map_center, zoom, layer.tiles, layer.transparency, layer.tint);
         }
 
         let projector = Projector::new(response.rect, self.memory, self.my_position);

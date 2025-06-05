@@ -47,7 +47,7 @@ impl Place for Image {
         );
 
         if painter.clip_rect().intersects(rect) {
-            let mut mesh = self.texture.mesh_with_rect(rect);
+            let mut mesh = self.texture.mesh_with_rect(rect, egui::Color32::WHITE);
             mesh.rotate(self.angle, rect.center());
             painter.add(mesh);
         }

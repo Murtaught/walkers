@@ -109,23 +109,24 @@ impl Texture {
         tile_size: f64,
         uv: Rect,
         transparency: f32,
+        tint: Color32,
     ) -> Mesh {
-        self.mesh_with_rect_and_uv(rect(screen_position, tile_size), uv, transparency)
+        self.mesh_with_rect_and_uv(rect(screen_position, tile_size), uv, transparency, tint)
     }
 
-    pub(crate) fn mesh_with_rect(&self, rect: Rect) -> Mesh {
+    pub(crate) fn mesh_with_rect(&self, rect: Rect, tint: Color32) -> Mesh {
         let mut mesh = Mesh::with_texture(self.0.id());
         mesh.add_rect_with_uv(
             rect,
             Rect::from_min_max(pos2(0., 0.0), pos2(1.0, 1.0)),
-            Color32::WHITE,
+            tint,
         );
         mesh
     }
 
-    pub(crate) fn mesh_with_rect_and_uv(&self, rect: Rect, uv: Rect, transparency: f32) -> Mesh {
+    pub(crate) fn mesh_with_rect_and_uv(&self, rect: Rect, uv: Rect, transparency: f32, tint: Color32) -> Mesh {
         let mut mesh = Mesh::with_texture(self.0.id());
-        mesh.add_rect_with_uv(rect, uv, Color32::WHITE.gamma_multiply(transparency));
+        mesh.add_rect_with_uv(rect, uv, tint.gamma_multiply(transparency));
         mesh
     }
 }
@@ -142,6 +143,7 @@ pub(crate) fn draw_tiles(
     zoom: Zoom,
     tiles: &mut dyn Tiles,
     transparency: f32,
+    tint: Color32,
 ) {
     let mut meshes = Default::default();
     flood_fill_tiles(
@@ -152,6 +154,7 @@ pub(crate) fn draw_tiles(
         tiles,
         transparency,
         &mut meshes,
+        tint,
     );
 
     for shape in meshes.drain().filter_map(|(_, mesh)| mesh) {
@@ -168,6 +171,7 @@ fn flood_fill_tiles(
     tiles: &mut dyn Tiles,
     transparency: f32,
     meshes: &mut HashMap<TileId, Option<Mesh>>,
+    tint: Color32,
 ) {
     // We need to make up the difference between integer and floating point zoom levels.
     let corrected_tile_size = tiles.tile_size() as f64 * 2f64.powf(zoom - zoom.round());
@@ -184,6 +188,7 @@ fn flood_fill_tiles(
                     corrected_tile_size,
                     tile.uv,
                     transparency,
+                    tint,
                 )
             });
 
@@ -206,6 +211,7 @@ fn flood_fill_tiles(
                     tiles,
                     transparency,
                     meshes,
+                    tint,
                 );
             }
         }
